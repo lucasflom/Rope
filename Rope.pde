@@ -1,3 +1,11 @@
+//TODO:
+// 1. Make the rope interact with itself while it moves
+// 2. Add Multiple ropes moving in the scene
+//   2.1 This should be done with a list of a list of rope nodes
+// 3. Have the ropes interact, should be tied together with 1
+// 4. Maybe add more obstacles?
+// 
+// Actually all of this should be cloth, could keep the rope just for something fun but it should all be converted to cloths
 // Challenge:
 //  - Move your simulation to 3D. You'll need to add a z coordinate to the nodes and links, and update the rendering
 //    but the physics simulation should be the same!
@@ -7,7 +15,7 @@
 float link_length = 0.1;
 
 // Nodes
-int rope_length = 40;
+int rope_length = 50;
 Node[] node_list = new Node[rope_length];
 Vec2 base_pos = new Vec2(5, 5);
 
@@ -75,9 +83,8 @@ void update_physics(float dt) {
         Vec2 dir = delta.normalized();
         float v1 = dot(node_list[i].vel, dir);
         Vec2 bounce = dir.times(v1);
-        //println("Bounce is " + bounce);
-        node_list[i].vel = node_list[i].vel.minus(bounce.normalized());
-        node_list[i].pos = node_list[i].pos.plus(dir.times(.1 + obstacles[j].r - obstacles[j].pos.distanceTo(node_list[i].pos)));
+        node_list[i].vel = node_list[i].vel.minus(bounce.times(1.5));
+        node_list[i].pos = node_list[i].pos.plus(dir.times(.001 + obstacles[j].r - obstacles[j].pos.distanceTo(node_list[i].pos)));
       }
     }
     node_list[i].pos = node_list[i].pos.plus(node_list[i].vel.times(dt));
