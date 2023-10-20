@@ -28,12 +28,14 @@ float scene_scale = width / 10.0f;
 int relaxation_steps = 100;
 int sub_steps = 10;
 
-
+// Set up for making the rope spring like
+float k = 2;
+float kv = 0.1;
 
 
 void setup() {
   size(900, 900);
-  surface.setTitle("Double Pendulum");
+  surface.setTitle("Rope Simulation");
   scene_scale = width / 10.0f;
   node_list[0] = new Node(base_pos);
   // Initialize the rope(s)
@@ -49,29 +51,38 @@ void setup() {
 
 
 void update_physics(float dt) {
-  // Semi-implicit Integration
+  // Semi-implicit Integration to update the velocity and move the points accordingly
   for (int i = 1; i < rope_length; i++){
+    // Adding spring like motion
+    float stringLen = node_list[i].pos.distanceTo(node_list[i-1].pos);
+    float stringF = -k*(stringLen - link_length);
+    Vec2 string_dir = node_list[i].pos.minus(node_list[i-1].pos);
+    string_dir.normalize();
+    Vec2 dampF = node_list[i].vel.minus(new Vec2(0, 0)).times(-kv); // Dampening force, try messing with the values in the vector
+    node_list[i].vel = node_list[i].vel.plus(string_dir.times(stringF).times(dt));
+    node_list[i].vel = node_list[i].vel.plus(dampF.times(dt));
+    // What was already here
     node_list[i].last_pos = node_list[i].pos;
     node_list[i].vel = node_list[i].vel.plus(gravity.times(dt));
     // Obstacle collision detection
-    // for (int j = 0; j < num_obstacles; j++){
-    //   if (obstacles[j].isColliding(node_list[i].pos)){
-    //     // Do collision thing
-    //     Vec2 delta = node_list[i].pos.minus(obstacles[j].pos);
-    //     Vec2 dir = delta.normalized();
-    //     float v1 = dot(node_list[i].vel, dir);
-    //     float v2 = dot(obstacles[j].vel, dir);
-    //     float m1 = node_list[i].mass;
-    //     float m2 = obstacles[j].mass;
-    //     float nv1 = (m1 * v1 + m2 * v2 - m2 * (v1 - v2) * cor) / (m1 + m2);
-    //     node_list[i].vel = node_list[i].vel.plus(dir.times(nv1 - v1));
-    //     println("Node " + str(i) + " is colliding with obstacle " + str(j));
-    //   }
-    // }
+    for (int j = 0; j < num_obstacles; j++){
+      if (obstacles[j].isColliding(node_list[i].pos)){
+        // Do collision thing
+        Vec2 delta = node_list[i].pos.minus(obstacles[j].pos);
+        Vec2 dir = delta.normalized();
+        float v1 = dot(node_list[i].vel, dir);
+        float v2 = dot(obstacles[j].vel, dir);
+        float m1 = node_list[i].mass;
+        float m2 = obstacles[j].mass;
+        float nv1 = (m1 * v1 + m2 * v2 - m2 * (v1 - v2) * cor) / (m1 + m2);
+        node_list[i].vel = node_list[i].vel.plus(dir.times(nv1 - v1));
+        println("Node " + str(i) + " is colliding with obstacle " + str(j));
+      }
+    }
     node_list[i].pos = node_list[i].pos.plus(node_list[i].vel.times(dt));
   }
 
-  // Constrain the distance between nodes to the link length
+  // Constrain the distance between nodes to the link length so that they don't move too far away from each other
   for (int i = 0; i < relaxation_steps; i++) {
     for (int j = 1; j < rope_length; j++){
       Vec2 delta = node_list[j].pos.minus(node_list[j-1].pos);
@@ -85,7 +96,7 @@ void update_physics(float dt) {
   }
 
 
-  // Update the velocities (PBD)
+  // Update the velocities after constraining them back from the previous step(PBD)
   for (int i = 0; i < rope_length; i++){
     node_list[i].vel = node_list[i].pos.minus(node_list[i].last_pos).times(1 / dt);
   }
