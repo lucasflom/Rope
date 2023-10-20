@@ -7,7 +7,7 @@
 float link_length = 0.1;
 
 // Nodes
-int rope_length = 50;
+int rope_length = 40;
 Node[] node_list = new Node[rope_length];
 Vec2 base_pos = new Vec2(5, 5);
 
@@ -58,7 +58,7 @@ void update_physics(float dt) {
     float stringF = -k*(stringLen - link_length);
     Vec2 string_dir = node_list[i].pos.minus(node_list[i-1].pos);
     string_dir.normalize();
-    Vec2 dampF = node_list[i].vel.minus(new Vec2(0, 0)).times(-kv); // Dampening force, try messing with the values in the vector
+    Vec2 dampF = node_list[i].vel.minus(new Vec2(1, 1)).times(-kv); // Dampening force, try messing with the values in the vector
     node_list[i].vel = node_list[i].vel.plus(string_dir.times(stringF).times(dt));
     node_list[i].vel = node_list[i].vel.plus(dampF.times(dt));
     // What was already here
@@ -66,17 +66,18 @@ void update_physics(float dt) {
     node_list[i].vel = node_list[i].vel.plus(gravity.times(dt));
     // Obstacle collision detection
     for (int j = 0; j < num_obstacles; j++){
-      if (obstacles[j].isColliding(node_list[i].pos)){
+      float distance = obstacles[j].pos.distanceTo(node_list[i].pos);
+      if (distance <= obstacles[j].r){
+        //println("The radius is " + str(obstacles[j].r));
+        //println("The distance is " + distance);
         // Do collision thing
         Vec2 delta = node_list[i].pos.minus(obstacles[j].pos);
         Vec2 dir = delta.normalized();
         float v1 = dot(node_list[i].vel, dir);
-        float v2 = dot(obstacles[j].vel, dir);
-        float m1 = node_list[i].mass;
-        float m2 = obstacles[j].mass;
-        float nv1 = (m1 * v1 + m2 * v2 - m2 * (v1 - v2) * cor) / (m1 + m2);
-        node_list[i].vel = node_list[i].vel.plus(dir.times(nv1 - v1));
-        println("Node " + str(i) + " is colliding with obstacle " + str(j));
+        Vec2 bounce = dir.times(v1);
+        //println("Bounce is " + bounce);
+        node_list[i].vel = node_list[i].vel.minus(bounce.normalized());
+        node_list[i].pos = node_list[i].pos.plus(dir.times(.1 + obstacles[j].r - obstacles[j].pos.distanceTo(node_list[i].pos)));
       }
     }
     node_list[i].pos = node_list[i].pos.plus(node_list[i].vel.times(dt));
@@ -112,12 +113,11 @@ void keyPressed() {
 
 float time = 0;
 void draw() {
-  float dt = 1.0 / 30; //Dynamic dt: 1/frameRate;
+  float dt = 1.0 / 50; //Dynamic dt: 1/frameRate;
   if (time >= 30) {
     paused = true;
     exit();
   }
-  println(time);
   if (!paused) {
     for (int i = 0; i < sub_steps; i++) {
       time += dt / sub_steps;
@@ -129,13 +129,12 @@ void draw() {
   background(255);
   stroke(0);
   strokeWeight(2);
-  println(nf(time, 0, 2));
   // obstacles
   fill(255, 0, 0);
   stroke(0);
   strokeWeight(0.02 * scene_scale);
   for (int i = 0; i < num_obstacles; i++){
-   circle(obstacles[i].pos.x * scene_scale, obstacles[i].pos.y * scene_scale, obstacles[i].r * scene_scale);
+   circle(obstacles[i].pos.x * scene_scale, obstacles[i].pos.y * scene_scale, obstacles[i].r * scene_scale * 2);
   }
 
   // Draw Links (black)
