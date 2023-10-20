@@ -28,9 +28,7 @@ float scene_scale = width / 10.0f;
 int relaxation_steps = 100;
 int sub_steps = 10;
 
-// File IO
-String fname = "trial5_3.csv";
-boolean add_data = false;
+
 
 
 void setup() {
@@ -55,20 +53,21 @@ void update_physics(float dt) {
   for (int i = 1; i < rope_length; i++){
     node_list[i].last_pos = node_list[i].pos;
     node_list[i].vel = node_list[i].vel.plus(gravity.times(dt));
-    for (int j = 0; j < num_obstacles; j++){
-      if (obstacles[j].isColliding(node_list[i].pos)){
-        // Do collision thing
-        Vec2 delta = node_list[i].pos.minus(obstacles[j].pos);
-        Vec2 dir = delta.normalized();
-        float v1 = dot(node_list[i].vel, dir);
-        float v2 = dot(obstacles[j].vel, dir);
-        float m1 = node_list[i].mass;
-        float m2 = obstacles[j].mass;
-        float nv1 = (m1 * v1 + m2 * v2 - m2 * (v1 - v2) * cor) / (m1 + m2);
-        node_list[i].vel = node_list[i].vel.plus(dir.times(nv1 - v1));
-        println("Node " + str(i) + " is colliding with obstacle " + str(j));
-      }
-    }
+    // Obstacle collision detection
+    // for (int j = 0; j < num_obstacles; j++){
+    //   if (obstacles[j].isColliding(node_list[i].pos)){
+    //     // Do collision thing
+    //     Vec2 delta = node_list[i].pos.minus(obstacles[j].pos);
+    //     Vec2 dir = delta.normalized();
+    //     float v1 = dot(node_list[i].vel, dir);
+    //     float v2 = dot(obstacles[j].vel, dir);
+    //     float m1 = node_list[i].mass;
+    //     float m2 = obstacles[j].mass;
+    //     float nv1 = (m1 * v1 + m2 * v2 - m2 * (v1 - v2) * cor) / (m1 + m2);
+    //     node_list[i].vel = node_list[i].vel.plus(dir.times(nv1 - v1));
+    //     println("Node " + str(i) + " is colliding with obstacle " + str(j));
+    //   }
+    // }
     node_list[i].pos = node_list[i].pos.plus(node_list[i].vel.times(dt));
   }
 
@@ -85,10 +84,6 @@ void update_physics(float dt) {
     node_list[0].pos = base_pos; // Fix the base node in place
   }
 
-  // Check for collisions with obstacles
-  for (int i = 1; i < rope_length; i++){
-    
-  }
 
   // Update the velocities (PBD)
   for (int i = 0; i < rope_length; i++){
