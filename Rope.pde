@@ -69,42 +69,27 @@ void update_physics(float dt) {
     PVector string_dir = PVector.sub(node_list[i].pos, node_list[i-1].pos);
     string_dir.normalize();
     PVector dampF = PVector.mult(PVector.sub(node_list[i].vel,new PVector(1, 1)), -kv); // Dampening force, try messing with the values in the vector
-    // Vec2 dampF = node_list[i].vel.minus(new Vec2(1, 1)).times(-kv); // Dampening force, try messing with the values in the vector
     node_list[i].vel.add(PVector.mult(string_dir, dt));
-    // node_list[i].vel = node_list[i].vel.plus(string_dir.times(stringF).times(dt));
-    node_list[i].vel.add(PVector.mult(dampF, dt));  // Dampening was taken out as it was messing with the simulation
-    // node_list[i].vel = node_list[i].vel.plus(dampF.times(dt));
-    // What was already here
+    node_list[i].vel.add(PVector.mult(dampF, dt));
     node_list[i].last_pos = node_list[i].pos.copy();
     node_list[i].vel.add(PVector.mult(gravity, dt));
-    // node_list[i].vel = node_list[i].vel.plus(gravity.times(dt));
+
     // Obstacle collision detection
     for (int j = 0; j < num_obstacles; j++){
       float distance = PVector.dist(obstacles[j].pos, node_list[i].pos);
-      // float distance = obstacles[j].pos.distanceTo(node_list[i].pos);
       if (distance <= obstacles[j].r){
         // Do collision thing
         PVector delta = PVector.sub(node_list[i].pos, obstacles[j].pos);
-        // Vec2 delta = node_list[i].pos.minus(obstacles[j].pos);
         PVector dir = delta.normalize(new PVector());
-        // Vec2 dir = delta.normalized();
         float v1 = node_list[i].vel.dot(dir);
-        // float v1 = dot(node_list[i].vel, dir);
         PVector bounce = PVector.mult(dir, v1);
-        // Vec2 bounce = dir.times(v1);
-        println("Before" + node_list[i].vel);
         node_list[i].vel.sub(PVector.mult(bounce, 1.5));
-        println("After " + node_list[i].vel);
-        // node_list[i].vel = node_list[i].vel.minus(bounce.times(1.5));
         node_list[i].pos.add(PVector.mult(dir, (0.001 + obstacles[j].r - distance)));
-        // node_list[i].pos = node_list[i].pos.plus(dir.times(.001 + obstacles[j].r - obstacles[j].pos.distanceTo(node_list[i].pos)));
         collided = true;
       }
     }
     float vel_difference = PVector.sub(node_list[i].vel, old_vel).mag();
-    if (vel_difference > 1) println("vel differece: " + vel_difference + " and here is the I " + i + " and did they collide with an obstacle " + collided);
     node_list[i].pos.add(PVector.mult(node_list[i].vel, dt));
-    // node_list[i].pos = node_list[i].pos.plus(node_list[i].vel.times(dt));
   }
   
 
@@ -112,16 +97,11 @@ void update_physics(float dt) {
   for (int i = 0; i < relaxation_steps; i++) {
     for (int j = 1; j < rope_length; j++){
       PVector delta = PVector.sub(node_list[j].pos, node_list[j-1].pos);
-      // Vec2 delta = node_list[j].pos.minus(node_list[j-1].pos);
       float delta_len = delta.mag();
-      // float delta_len = delta.length();
       float correction = delta_len - link_length;
       delta.normalize();
-      // Vec2 delta_normalized = delta.normalized();
       node_list[j].pos.sub(PVector.mult(delta, (correction / 2)));
-      // node_list[j].pos = node_list[j].pos.minus(delta_normalized.times(correction / 2));
       node_list[j-1].pos.add(PVector.mult(delta, (correction / 2)));
-      // node_list[j-1].pos = node_list[j-1].pos.plus(delta_normalized.times(correction / 2));
     }
     node_list[0].pos = base_pos.copy(); // Fix the base node in place
   }
@@ -130,7 +110,6 @@ void update_physics(float dt) {
   // Update the velocities after constraining them back from the previous step(PBD)
   for (int i = 1; i < rope_length; i++){
     node_list[i].vel = PVector.mult(PVector.sub(node_list[i].pos, node_list[i].last_pos), 1/dt);
-    // node_list[i].vel = node_list[i].pos.minus(node_list[i].last_pos).times(1 / dt);
   }
   
 
@@ -146,7 +125,7 @@ void keyPressed() {
 
 float time = 0;
 void draw() {
-  float dt = 1.0 / 50; //Dynamic dt: 1/frameRate;
+  float dt = 1.0 / 40; //Dynamic dt: 1/frameRate;
   if (time >= 30) {
     paused = true;
     exit();
@@ -174,7 +153,6 @@ void draw() {
   stroke(10);
   strokeWeight(0.02 * scene_scale);
   for (int i = 1; i < rope_length; i++){
-    // println(node_list[i-1].pos.x, node_list[i-1].pos.y);
     line(node_list[i-1].pos.x * scene_scale, node_list[i-1].pos.y * scene_scale, node_list[i].pos.x * scene_scale, node_list[i].pos.y * scene_scale);
   }
 }  
