@@ -68,11 +68,11 @@ void update_physics(float dt) {
     float stringF = -k*(stringLen - link_length);
     PVector string_dir = PVector.sub(node_list[i].pos, node_list[i-1].pos);
     string_dir.normalize();
-    PVector dampF = PVector.sub(node_list[i].vel, PVector.mult(new PVector(0,0,0), -kv)); // Dampening force, try messing with the values in the vector
+    PVector dampF = PVector.mult(PVector.sub(node_list[i].vel,new PVector(1, 1)), -kv); // Dampening force, try messing with the values in the vector
     // Vec2 dampF = node_list[i].vel.minus(new Vec2(1, 1)).times(-kv); // Dampening force, try messing with the values in the vector
     node_list[i].vel.add(PVector.mult(string_dir, dt));
     // node_list[i].vel = node_list[i].vel.plus(string_dir.times(stringF).times(dt));
-    // node_list[i].vel.add(PVector.mult(dampF, dt));  // Dampening was taken out as it was messing with the simulation
+    node_list[i].vel.add(PVector.mult(dampF, dt));  // Dampening was taken out as it was messing with the simulation
     // node_list[i].vel = node_list[i].vel.plus(dampF.times(dt));
     // What was already here
     node_list[i].last_pos = node_list[i].pos.copy();
