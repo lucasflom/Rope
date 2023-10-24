@@ -12,10 +12,10 @@
 
 
 // Link length
-float link_length = 0.3;
+float link_length = 0.1;
 
 // Nodes
-int rope_length = 15;
+int rope_length = 50;
 Node[] node_list = new Node[rope_length];
 PVector base_pos = new PVector(5, 5, 0);
 
@@ -54,7 +54,7 @@ void setup() {
   }
   // Initialize the obtacles
   for (int i = 0; i < num_obstacles; i++){
-    obstacles[i] = new Sphere(new PVector(4 + (0.5 * i),7 + (0.5 * i)), 0.3);
+    obstacles[i] = new Sphere(new PVector(3 + (0.5 * i),7 + (0.5 * i)), 0.4);
   }
 
   // println(sameSide(new PVector(1, 1, 1), new PVector(-1, -1, -1), new PVector(1, -1, -1), new PVector(1, -1, -0.5)));
@@ -154,7 +154,7 @@ void keyPressed() {
 
 float time = 0;
 void draw() {
-  float dt = 1.0 / 120; //Dynamic dt: 1/frameRate;
+  float dt = 1.0 / 40; //Dynamic dt: 1/frameRate;
   if (time >= 30) {
     paused = true;
     exit();
