@@ -20,7 +20,7 @@ float link_length = 0.1;
 // Nodes
 int rope_length = 50;
 Node[] node_list = new Node[rope_length];
-PVector base_pos = new PVector(0, 0, -15);
+PVector base_pos = new PVector(5, 5, 0);
 
 // Obstacles
 int num_obstacles = 1;
@@ -53,13 +53,16 @@ void setup() {
   node_list[0] = new Node(base_pos.copy());
   // Initialize the rope(s)
   for (int i = 1; i < rope_length; i++){
-    PVector point = new PVector((base_pos.x + (link_length * i)), base_pos.y, base_pos.z);
+    PVector point = new PVector((5 + (link_length * i)), 5, 0);
     node_list[i] = new Node(point);
   }
   // Initialize the obtacles
   for (int i = 0; i < num_obstacles; i++){
-    obstacles[i] = new Sphere(new PVector(-3 + (0.5 * i),3 + (0.5 * i), -15.4 + (0.5 * i)), 0.9);
+    obstacles[i] = new Sphere(new PVector(3 + (0.5 * i),7 + (0.5 * i)), 0.4);
   }
+
+  // println(sameSide(new PVector(1, 1, 1), new PVector(-1, -1, -1), new PVector(1, -1, -1), new PVector(1, -1, -0.5)));
+  // exit();
 }
 
 
@@ -194,7 +197,7 @@ void draw() {
   stroke(10);
   strokeWeight(0.02 * scene_scale);
   for (int i = 1; i < rope_length; i++){
-    line(node_list[i-1].pos.x * scene_scale, node_list[i-1].pos.y * scene_scale, node_list[i-1].pos.z * scene_scale, node_list[i].pos.x * scene_scale, node_list[i].pos.y * scene_scale, node_list[i].pos.z * scene_scale);
+    line(node_list[i-1].pos.x * scene_scale, node_list[i-1].pos.y * scene_scale, node_list[i].pos.x * scene_scale, node_list[i].pos.y * scene_scale);
   }
 }  
 
