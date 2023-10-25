@@ -8,9 +8,12 @@ class Camera
 {
   Camera()
   {
-    position      = new PVector(256.89804, -274.1336, -303.92865); // initial position
-    theta         = 0.37287498; // rotation around Y axis. Starts with forward direction as ( 0, 0, -1 )
-    phi           = -0.41212523; // rotation around X axis. Starts with up direction as ( 0, 1, 0 )
+    // theta =  -0.292196;
+    // phi = -0.292196;
+    // position = new PVector(40.768463, 31.086063, -424.32175);
+    position      = new PVector(-565.23615, 100.74871, -574.334); // initial position
+    theta         = -0.82425004; // rotation around Y axis. Starts with forward direction as ( 0, 0, -1 )
+    phi           = -0.19625014; // rotation around X axis. Starts with up direction as ( 0, 1, 0 )
     moveSpeed     = 50;
     turnSpeed     = 1.57; // radians/sec
     boostSpeed    = 10;  // extra speed boost for when you press shift
@@ -30,8 +33,8 @@ class Camera
   void Update(float dt)
   {
     theta += turnSpeed * ( negativeTurn.x + positiveTurn.x)*dt;
-    println("theta: " + theta + " phi: " + phi);
-    println("Position: " + position);
+    // println("theta: " + theta + " phi: " + phi);
+    // println("Position: " + position);
     
     // cap the rotation about the X axis to be less than 90 degrees to avoid gimble lock
     float maxAngleInRadians = 85 * PI / 180;

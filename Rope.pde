@@ -16,10 +16,14 @@ Camera camera;
 
 // Link length
 float link_length = 0.1;
+float cross_length = 0.245;
+float link_width = 0.173;
+
 
 // Nodes
-int rope_length = 50;
-Node[] node_list = new Node[rope_length];
+int cloth_length = 50;
+int cloth_width = 20;
+Node[][] cloth_list = new Node[cloth_width][cloth_length];
 PVector base_pos = new PVector(0, 0, -15);
 
 // Obstacles
@@ -36,7 +40,7 @@ float cor = 0.75f;
 float scene_scale = width / 10.0f;
 
 // Physics Parameters
-int relaxation_steps = 100;
+int relaxation_steps = 10;
 int sub_steps = 10;
 
 // Set up for making the rope spring like
@@ -50,102 +54,117 @@ void setup() {
   camera = new Camera();
   surface.setTitle("Rope Simulation");
   scene_scale = width / 10.0f;
-  node_list[0] = new Node(base_pos.copy());
-  // Initialize the rope(s)
-  for (int i = 1; i < rope_length; i++){
-    PVector point = new PVector((base_pos.x + (link_length * i)), base_pos.y, base_pos.z);
-    node_list[i] = new Node(point);
+  for (int j = 0; j < cloth_width; j++){
+    // Set the headers
+    cloth_list[j][0] = new Node(new PVector(base_pos.x + (j * link_length), base_pos.y + (j * link_length), base_pos.z + (j * link_length)));
+    // Initialize the strands of the cloth
+    // println(cloth_list[j][0].pos);
+    for (int i = 1; i < cloth_length; i++){
+      PVector point = new PVector((cloth_list[j][0].pos.x + (link_length * i)), cloth_list[j][0].pos.y, cloth_list[j][0].pos.z);
+      cloth_list[j][i] = new Node(point);
+      // if (i == (cloth_length-1) && j == (cloth_width / 2)) println(point);
+    }
   }
   // Initialize the obtacles
   for (int i = 0; i < num_obstacles; i++){
-    obstacles[i] = new Sphere(new PVector(-3 + (0.5 * i),3 + (0.5 * i), -15.4 + (0.5 * i)), 0.9);
+    obstacles[i] = new Sphere(new PVector(3, 4.4, -14), 0.9);
   }
 }
 
 
 void update_physics(float dt) {
   // Semi-implicit Integration to update the velocity and move the points accordingly
-  for (int i = 1; i < rope_length; i++){
-    // Adding spring like motion
-    float stringLen = PVector.dist(node_list[i].pos, node_list[i-1].pos);
-    float stringF = -k*(stringLen - link_length);
-    PVector string_dir = PVector.sub(node_list[i].pos, node_list[i-1].pos);
-    string_dir.normalize();
-    PVector dampF = PVector.mult(PVector.sub(node_list[i].vel,new PVector(1, 1)), -kv); // Dampening force, try messing with the values in the vector
-    node_list[i].vel.add(PVector.mult(string_dir, dt));
-    node_list[i].vel.add(PVector.mult(dampF, dt));
-    node_list[i].last_pos = node_list[i].pos.copy();
-    node_list[i].vel.add(PVector.mult(gravity, dt));
+  for (int r = 0; r < cloth_width; r++){
+    for (int i = 0; i < cloth_length; i++){
+      // Adding spring like motion
+      if (i == 0) {
 
-    // Obstacle collision detection
-    for (int j = 0; j < num_obstacles; j++){
-      float distance = PVector.dist(obstacles[j].pos, node_list[i].pos);
-      if (distance <= obstacles[j].r){
-        // Do collision thing
-        PVector delta = PVector.sub(node_list[i].pos, obstacles[j].pos);
-        PVector dir = delta.normalize(new PVector());
-        float v1 = node_list[i].vel.dot(dir);
-        PVector bounce = PVector.mult(dir, v1);
-        node_list[i].vel.sub(PVector.mult(bounce, 1.5));
-        node_list[i].pos.add(PVector.mult(dir, (0.001 + obstacles[j].r - distance)));
+      } else {
+        float stringLen = PVector.dist(cloth_list[r][i].pos, cloth_list[r][i-1].pos);
+        float stringF = -k*(stringLen - link_length);
+        PVector string_dir = PVector.sub(cloth_list[r][i].pos, cloth_list[r][i-1].pos);
+        string_dir.normalize();
+        cloth_list[r][i].vel.add(PVector.mult(string_dir, dt));
       }
+      PVector dampF = PVector.mult(PVector.sub(cloth_list[r][i].vel,new PVector(1, 1)), -kv); // Dampening force, try messing with the values in the vector
+      cloth_list[r][i].vel.add(PVector.mult(dampF, dt));
+      cloth_list[r][i].last_pos = cloth_list[r][i].pos.copy();
+      cloth_list[r][i].vel.add(PVector.mult(gravity, dt));
+      // if (i == 0) println(cloth_list[r][i].vel);
+      // Obstacle collision detection
+      for (int j = 0; j < num_obstacles; j++){
+        float distance = PVector.dist(obstacles[j].pos, cloth_list[r][i].pos);
+        if (distance <= obstacles[j].r){
+          // Do collision thing
+          PVector delta = PVector.sub(cloth_list[r][i].pos, obstacles[j].pos);
+          PVector dir = delta.normalize(new PVector());
+          float v1 = cloth_list[r][i].vel.dot(dir);
+          PVector bounce = PVector.mult(dir, v1);
+          cloth_list[r][i].vel.sub(PVector.mult(bounce, 1.5));
+          cloth_list[r][i].pos.add(PVector.mult(dir, (0.001 + obstacles[j].r - distance)));
+        }
+      }
+    
+    cloth_list[r][i].pos.add(PVector.mult(cloth_list[r][i].vel, dt));
+
     }
-
-    
-    
-    node_list[i].pos.add(PVector.mult(node_list[i].vel, dt));
-    // Self collision check **Abandoned for now
-    // for (int j = 1; j < rope_length; j++){
-    //   PVector p1 = node_list[i].last_pos.copy();
-    //   PVector p2 = node_list[i].pos.copy();
-    //   PVector o1 = node_list[j-1].pos.copy();
-    //   PVector o2 = node_list[j].pos.copy();
-    //   if (i != j && i != (j-1) && !sameSide(p1, p2, o1, o2) && !sameSide(o1, o2, p1, p2)){
-    //     PVector cp1 = PVector.cross(PVector.sub(p2, p1), PVector.sub(o1, p1), new PVector());
-    //     PVector cp2 = PVector.cross(PVector.sub(p2, p1), PVector.sub(o2, p1), new PVector());
-    //     // There has been a collision
-    //     // Move the current point(i) to just before the collision and kill the velocity
-    //     PVector intersection = new PVector(p1.x + (cp1.x * (p2.x - p1.x)), p1.y + (cp1.y * (p2.y - p1.y)), p1.z + (cp1.z * (p2.z - p1.z))); // Probably incorrect
-    //     PVector delta = PVector.sub(p1, intersection);
-    //     PVector dir = delta.normalize(new PVector());
-    //     float v1 = node_list[i].vel.dot(dir);
-    //     PVector bounce = PVector.mult(dir, v1);
-    //     print(intersection);
-    //     node_list[i].vel.sub(PVector.mult(bounce, 0.9));
-    //     node_list[i].pos = node_list[i].last_pos.copy();
-    //     node_list[i].pos.add(PVector.mult(dir, (0.001)));
-    //     // Then break because no need to check for other collisions? Try keep going first
-    //     println("The collision of " + i + " and " + (j-1) + " to " + j);
-
-    //   }
-    // }
-    
   }
   
 
   // Constrain the distance between nodes to the link length so that they don't move too far away from each other
   for (int i = 0; i < relaxation_steps; i++) {
-    for (int j = 1; j < rope_length; j++){
-      PVector delta = PVector.sub(node_list[j].pos, node_list[j-1].pos);
-      float delta_len = delta.mag();
-      float correction = delta_len - link_length;
-      delta.normalize();
-      node_list[j].pos.sub(PVector.mult(delta, (correction / 2)));
-      node_list[j-1].pos.add(PVector.mult(delta, (correction / 2)));
+    for (int r = 0; r < cloth_width; r++) {
+      for (int j = 1; j < cloth_length; j++){
+        // Check up and down
+        PVector delta = PVector.sub(cloth_list[r][j].pos, cloth_list[r][j-1].pos);
+        float delta_len = delta.mag();
+        float correction = delta_len - link_length;
+        delta.normalize();
+        cloth_list[r][j].pos.sub(PVector.mult(delta, (correction / 2)));
+        cloth_list[r][j-1].pos.add(PVector.mult(delta, (correction / 2)));
+        // Check across
+        if (r < (cloth_width - 1)){
+          // Check the current node to the node to right of it
+          delta = PVector.sub(cloth_list[r][j].pos, cloth_list[r+1][j].pos);
+          delta_len = delta.mag();
+          correction = delta_len - link_width;
+          delta.normalize();
+          cloth_list[r][j].pos.sub(PVector.mult(delta, (correction / 2)));
+          cloth_list[r+1][j].pos.add(PVector.mult(delta, (correction / 2)));
+        }
+        cloth_list[r][0].pos = new PVector(base_pos.x + (r * link_length), base_pos.y + (r * link_length), base_pos.z + (r * link_length)); // Fix the base node in place
+        
+      }
+      cloth_list[r][0].pos = new PVector(base_pos.x + (r * link_length), base_pos.y + (r * link_length), base_pos.z + (r * link_length)); // Fix the base node in place
+      // println("Horizontal: " + PVector.dist(cloth_list[0][1].pos, cloth_list[1][1].pos));
+      // println("Vertical: " + PVector.dist(cloth_list[0][1].pos, cloth_list[0][2].pos));
+      // exit();
     }
-    node_list[0].pos = base_pos.copy(); // Fix the base node in place
   }
-
+ 
+  
 
   // Update the velocities after constraining them back from the previous step(PBD)
-  for (int i = 1; i < rope_length; i++){
-    node_list[i].vel = PVector.mult(PVector.sub(node_list[i].pos, node_list[i].last_pos), 1/dt);
+  for (int r = 0; r < cloth_width; r++){
+    for (int i = 1; i < cloth_length; i++){
+      cloth_list[r][i].vel = PVector.mult(PVector.sub(cloth_list[r][i].pos, cloth_list[r][i].last_pos), 1/dt);
+    }
   }
+  
   
 
 }
 
-boolean paused = false;
+boolean paused = true;
+
+void mousePressed() {
+  // Update the obstacle
+  float x = mouseX / scene_scale;
+  float y = mouseY / scene_scale;
+  println("Before: " + obstacles[0].pos);
+  obstacles[0].pos = new PVector(x, y, obstacles[0].pos.z);
+  println("After: " + obstacles[0].pos);
+}
 
 void keyPressed() {
   if (key == ' ') {
@@ -159,8 +178,9 @@ void keyReleased() {
 }
 
 float time = 0;
+
 void draw() {
-  float dt = 1.0 / 40; //Dynamic dt: 1/frameRate;
+  float dt = 1.0 / 90; //Dynamic dt: 1/frameRate;
   camera.Update(dt);
   if (time >= 30) {
     paused = true;
@@ -193,9 +213,17 @@ void draw() {
   // Draw Links (black)
   stroke(10);
   strokeWeight(0.02 * scene_scale);
-  for (int i = 1; i < rope_length; i++){
-    line(node_list[i-1].pos.x * scene_scale, node_list[i-1].pos.y * scene_scale, node_list[i-1].pos.z * scene_scale, node_list[i].pos.x * scene_scale, node_list[i].pos.y * scene_scale, node_list[i].pos.z * scene_scale);
+  for (int r = 0; r < cloth_width; r++){
+      // pushMatrix();
+      // translate(cloth_list[r][0].pos.x * scene_scale, cloth_list[r][0].pos.y * scene_scale, cloth_list[r][0].pos.z * scene_scale);
+      // sphere(1);
+      // popMatrix();
+    for (int i = 0; i < cloth_length; i++){
+      if (r > 0) line(cloth_list[r-1][i].pos.x * scene_scale, cloth_list[r-1][i].pos.y * scene_scale, cloth_list[r-1][i].pos.z * scene_scale, cloth_list[r][i].pos.x * scene_scale, cloth_list[r][i].pos.y * scene_scale, cloth_list[r][i].pos.z * scene_scale);
+      if (i > 0) line(cloth_list[r][i-1].pos.x * scene_scale, cloth_list[r][i-1].pos.y * scene_scale, cloth_list[r][i-1].pos.z * scene_scale, cloth_list[r][i].pos.x * scene_scale, cloth_list[r][i].pos.y * scene_scale, cloth_list[r][i].pos.z * scene_scale);
+    }
   }
+  
 }  
 
 
@@ -213,7 +241,7 @@ void draw() {
 
 // float total_length_error() {
 //   float error = 0;
-//   for (int i = 1; i < rope_length; i++){
+//   for (int i = 1; i < cloth_length; i++){
 //     Vec2 delta = node_list[i].pos.minus(node_list[i-1].pos);
 //     float delta_len = delta.length();
 //     float correction = delta_len - link_length;
@@ -226,7 +254,7 @@ void draw() {
 //   // Compute the total energy (should be conserved)
 //   float kinetic_energy = 0;
 //   float potential_energy = 0;
-//   for (int i = 0; i < rope_length; i++){
+//   for (int i = 0; i < cloth_length; i++){
 //     kinetic_energy += 0.5 * node_list[i].vel.lengthSqr(); // KE = (1/2) * m * v^2
 //     node_list[i].h = (height - node_list[i].pos.y * scene_scale) / scene_scale;
 //     potential_energy += gravity.y * node_list[i].h; // PE = m*g*h
